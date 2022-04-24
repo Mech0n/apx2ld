@@ -1,0 +1,14 @@
+.vscode
+.history
+
+*.ipynb
+*.apx
+*.gv
+*.svg
+*.c
+
+Pipfile.lock
+
+__pycache__
+.ipynb_checkpoints
+.DS_store
