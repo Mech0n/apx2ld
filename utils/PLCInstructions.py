@@ -24,6 +24,27 @@ class Variable (object):
 
 """
     func:
-    - disp
-    - '*'
+    - disp: "mov bx, 0xbalabala"
+    - input_list: [ only disp ]
+    - output_list: [ only disp ]
+    - time
 """
+class FBD (object):
+    def __init__(self) -> None:
+        self.input_list = set()
+        self.output_list = set()
+        self.disp = 0
+        self.time = -1
+    
+    def insert_input_list(self, variable_disp:int) -> None: 
+        self.input_list.add(variable_disp)
+
+    def insert_output_list(self, variable_disp:int) -> None: 
+        self.output_list.add(variable_disp)
+
+    def set_disp(self, disp: int) -> None:
+        self.disp = disp
+    
+    def set_time(self, time: int) -> None:
+        self.time = time
+

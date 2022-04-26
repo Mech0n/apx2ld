@@ -2,6 +2,7 @@ from re import compile
 from copy import deepcopy
 
 from .x86_const import X86_OP_MEM, X86_OP_REG, X86_OP_IMM
+from .PLCInstructions import FBD
 
 # Overflow flag mask
 ofMask = {1: 0x80, 2: 0x8000, 4: 0x80000000, 8: 0x8000000000000000}
@@ -18,11 +19,12 @@ def mov(left, right, inst, cg):
     payload = f"{inst.mnemonic}\t{inst.op_str};"
 
     # set output variable, such as : mov byte ptr [ebx + 0xc], al/dl / mov dword ptr [ebx + 0xc], eax
-    if left.type == X86_OP_MEM and left.sizeBytes == 1:
+    if left.type == X86_OP_MEM:
         p = compile('ebx\\+0x[0-9a-fA-F]+')
         m = p.match(left.value)
         if m:
-            key = int(m.group()[4:], 16)
+            key = int(m.group()[4:], 16)    # key is disp
+            # insert variable in cg.variable
             if int(m.group()[4:], 16) in cg.variables[cg.recent_variable_base]:
                 cg.variables[cg.recent_variable_base][key].setOutputFlag(True)
 
@@ -31,11 +33,19 @@ def mov(left, right, inst, cg):
                 # deal with postfix expression
                 cg.rungs.append(deepcopy(cg.rung))
                 cg.rung.clear()
-            elif right.type == X86_OP_REG and right.value in ['al', 'eax']:
-                payload += "\t maybe it's someone's parameter"
-                # parameter all in eax:
-                if right.value == 'eax':
+            else :
+                if right.type == X86_OP_REG and right.value in ['al', 'eax']:
+                    payload += "\t maybe it's someone's parameter"
                     payload += f", which value is {cg.regs['eax'].value}"
+                    cg.recent_fbd.insert_input_list(key)
+
+                    # TODO: FBD time
+                    if right.value == 'eax' and left.sizeBytes == 4:
+                        if cg.recent_fbd != None:
+                            cg.recent_fbd.set_time(int(cg.regs['eax'].value))
+                        else:
+                            cg.recent_fbd = FBD()
+
 
     # set input variable
     if left.type == X86_OP_REG and left.value in ['eax', 'al']:
@@ -45,30 +55,52 @@ def mov(left, right, inst, cg):
             p = compile('ebx\\+0x[0-9a-fA-F]+')
             m = p.match(right.value)
             if m:
-                key = int(m.group()[4:], 16)
-                if int(m.group()[4:], 16) in cg.variables[cg.recent_variable_base]:
+                key = int(m.group()[4:], 16) # key is disp
+                # insert variable in cg.variable
+                if key in cg.variables[cg.recent_variable_base]:
                     cg.variables[cg.recent_variable_base][key].setInputFlag(
                         True)
                 # set al an assumptive value which is can be find in mem
                 cg.regs['eax'].set_value_u8(int(mem_default_value))
 
-            # decide if contact
-            if cg.recent_variable_base != cg.function_variable_base:
-                payload += "\t maybe it's a contact"
-                # append postfix expression
-                cg.rung.append('Contact')
-            else:
-                payload += f"\t maybe it's someone instruction's output"
+                # decide if contact
+                if cg.recent_variable_base != cg.function_variable_base:
+                    payload += "\t maybe it's a contact"
+                    # append postfix expression
+                    cg.rung.append('Contact')
+                else:
+                    payload += f"\t maybe it's someone instruction's output"
+                    cg.recent_fbd.insert_output_list(key)
+                return
 
         # handle eax for funcs parameter, such as : mov eax, 0x1222
         elif right.type == X86_OP_IMM:
             cg.regs['eax'].set_value_u32(int(right.value))
             payload += f" maybe it's someone's parameter, which value is {cg.regs['eax'].value}"
 
-            # set function_variable_base
-            if not cg.input_variable_flag:
-                cg.function_variable_base = cg.recent_variable_base
-                cg.input_variable_flag = True
+            # if cg.recent_fbd != None:
+            #     cg.recent_fbd.set_time(int(right.value))
+            # else:
+            #     cg.recent_fbd = FBD()
+    
+    if left.type == X86_OP_REG and left.value in ['bx', 'ebx']:
+        if left.value == 'bx' and right.type == X86_OP_IMM:
+            # save FBD disp in ebx, such as mov bx, 0x64
+            cg.regs['ebx'].set_value_u16(int(right.value))
+
+        if left.value == 'ebx' and right.type == X86_OP_MEM:
+            # init FBD
+            p = compile('\\+0x400[0-9]+')
+            m = p.match(right.value)
+            if m:
+                key = str(int(m.group()[1:], 16))
+                if key == cg.function_variable_base:
+                    if not cg.function_variable_flag:
+                        cg.recent_fbd = FBD()
+                        cg.function_variable_flag = True
+                    else:
+                        cg.function_variable_flag = False
+
 
     cg.add_log(
         "%s = %s" % (left.getValue(), right.getValue()),

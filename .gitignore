@@ -6,9 +6,12 @@
 *.gv
 *.svg
 *.c
+*.s
 
 Pipfile.lock
 
 __pycache__
 .ipynb_checkpoints
 .DS_store
+
+test.py

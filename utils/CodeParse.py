@@ -1,31 +1,12 @@
-from dis import dis
 from capstone import CS_ARCH_X86, CS_MODE_32, Cs
+from copy import deepcopy
 
 from .Instructions import *
 from .Operand import Operand
-from .PLCInstructions import Variable
+from .PLCInstructions import Variable, FBD
 from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 from .Register import register
 from .DataStruct import Node
-
-# Basic code..
-codeC = """
-# include "environment.h"
-
-void func() {
-%s}\n
-int main() {
-}
-"""
-
-# """
-#     func:
-#     - disp
-#     - '*'
-# """
-# class Func (object) :
-#     def __init__(self, disp) -> None:
-#         self.disp = disp
 
 
 class CodeParse (object):
@@ -65,16 +46,28 @@ class CodeParse (object):
         }
 
         """
-        "addr" : {tag1: value, tag2: value},
-        "addr" : balabala
+        {
+            "addr" : {tag1: value, tag2: value},
+            "addr" : {tag1: value, tag2: value},
+        }
         """
         self.variables = dict()
         self.recent_variable_base = 0
         self.function_variable_base = 0
-        self.input_variable_flag = False
+        self.function_variable_flag = False
 
         """
-        "bx" : reg
+        functions : only save the functions base address and bx value
+        {
+            disp: [FBD, ],
+            disp: [FBD, ]
+        }
+        """
+        self.functions = dict()
+        self.recent_fbd = None
+
+        """
+        "ebx" : reg
         """
         self.regs = dict()
         self.init_regs()
@@ -84,7 +77,6 @@ class CodeParse (object):
         """
         self.rungs = []
         self.rung = []
-        
 
         self.jumps = ["jmp", "je", "jne", "jz", "jnz", "jnb", "jb", "jbe"]
         self.usedFlags = flags
@@ -97,10 +89,13 @@ class CodeParse (object):
         self.jumpPlaces = {}
         self.check_jumps()
 
+        self.find_function_base()
+
         self.run()
 
         print(self.rungs)
         self.get_as_bitree()
+        self.functions_log()
 
 
     """
@@ -114,6 +109,8 @@ class CodeParse (object):
         stack = []
         head = None
         for rung in self.rungs:
+            if len(rung) == 0:
+                continue                
             for elem in rung:
                 if elem == 'Contact':
                     tmp = Node(elem)
@@ -143,13 +140,6 @@ class CodeParse (object):
             head = None
         
         return bitrees
-
-
-
-    """ Just fill C template """
-
-    def get_as_c(self):
-        return codeC % self.cCode
 
     """ 
         Every jump must have place to jump,
@@ -237,11 +227,17 @@ class CodeParse (object):
                 out = ""
                 # find variables
                 if displacement > 0x4000000:
-                    key = str(displacement)
-                    # print(f"log : {hex(displacement)}")
-                    if str(displacement) not in self.variables:
-                        self.variables[key] = dict()
-                    self.recent_variable_base = key
+                    variable_key = str(displacement)
+                    if variable_key not in self.variables:
+                        self.variables[variable_key] = dict()
+                    if self.recent_variable_base == self.function_variable_base and variable_key != self.function_variable_base:
+                        # insert FBD in self.functions
+                        tmp = deepcopy(self.recent_fbd)
+                        if self.regs['ebx'].value not in self.functions:
+                            self.functions[self.regs['ebx'].value] = []
+                        self.functions[self.regs['ebx'].value].append(tmp)    # bx is self.regs['ebx'].value and it's disp and tag.
+                        self.recent_fbd = None
+                    self.recent_variable_base = variable_key
 
             if index:
                 out += "+" + instr.reg_name(index) + "*" + str(scale)
@@ -257,7 +253,8 @@ class CodeParse (object):
                 if displacement == 0x4000000:
                     #TODO funcs
                     pass
-
+            
+            # print(out)
             return Operand(operand_type, out, operand.size)
 
         # eg. 0x10
@@ -295,3 +292,31 @@ class CodeParse (object):
     def init_regs(self) -> None:
         for reg_name in ['eax', 'ebx', 'ecx', 'edx'] :
             self.regs[reg_name] = register(reg_name)
+
+    def find_function_base(self) -> None:
+        recent_base = 0
+        for inst in self.instructions:
+            # find variable base
+            p = compile('ebx, dword ptr \\[0x4000[0-9]+\\]')
+            m = p.match(inst.op_str)
+            if m:
+                key = m.group()[16:-1]
+                recent_base = int(key, 16)
+            
+            # set function_variable_base
+            if inst.mnemonic == 'call' and inst.op_str == 'ebx':
+                self.function_variable_base = str(recent_base)
+
+    def functions_log(self) -> None:
+        for key, value in self.functions.items():
+            for fbd in value:
+                print(f"{key}:")
+                print("output:")
+                for i in fbd.output_list:
+                    print(hex(i))
+                print("input:")
+                for i in fbd.input_list:
+                    print(hex(i))
+                print(f"time:\t{fbd.time}")
+                print()
+            

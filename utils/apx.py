@@ -44,7 +44,7 @@ class apx(object):
         code_start_magic = b'\xC8..\x00'
         code_end_magic = b'\xC9[\xC3\xC2]'
 
-        print(len(self.pkzip_files))
+        # print(len(self.pkzip_files))
         if len(self.pkzip_files) == 0:
             self.extract_pkfile()
         
