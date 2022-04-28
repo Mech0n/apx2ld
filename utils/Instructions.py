@@ -57,6 +57,8 @@ def mov(left, right, inst, cg):
             p = compile('ebx\\+0x[0-9a-fA-F]+')
             m = p.match(right.value)
             if m:
+                cg.not_flag = False
+
                 key = int(m.group()[4:], 16) # key is disp
                 # insert variable in cg.variable
                 if key in cg.variables[cg.recent_variable_base]:
@@ -79,6 +81,13 @@ def mov(left, right, inst, cg):
                     payload += f"\t maybe it's someone instruction's output"
                     cg.recent_fbd.insert_output_list(key)
                 return
+            
+            p = compile('ebp-[0-9a-fA-Fx]+')
+            m = p.match(right.value)
+            if m:
+                print(m.group())
+                cg.not_flag = True
+
 
         # handle eax for funcs parameter, such as : mov eax, 0x1222
         elif right.type == X86_OP_IMM:
@@ -302,6 +311,10 @@ def or_(left, right, inst, cg):
 
 
 def xor(left, right, inst, cg):
+    # append postfix expression
+    if left.value == 'al' and right.value == 'cl':
+        cg.rung.append('xor')
+
     cg.add_log(f"// {inst.mnemonic} not implemented yet",
                comment=(f"{inst.mnemonic}\t{inst.op_str};"))
 
@@ -333,6 +346,10 @@ def not_(op, inst, cg):
     if op.type == X86_OP_REG and op.value == 'eax':
         cg.regs['eax'].set_value_u32(cg.regs['eax'].value)
         payload += f" eax is {cg.regs['eax'].value}"
+
+        # identify not Logic gate
+        if cg.not_flag:
+            cg.rung.append('not')
 
     cg.add_log(" ", comment=payload)
 

@@ -52,6 +52,7 @@ class CodeParse (object):
             "addr" : {tag1: value, tag2: value},
         }
         """
+        self.not_flag = False   # if not_flag == True, al' value is from ptr [epb - 0xbalaba]
         self.variables = dict()
         self.recent_variable_base = 0
         self.function_variable_base = 0
@@ -122,10 +123,14 @@ class CodeParse (object):
                 if elem in ['openContact', 'closedContact', 'coil', 'Contact']:
                     tmp = Node(elem)
                     stack.append(tmp)
-                elif elem in ['and', 'or']:
+                elif elem in ['and', 'or', 'xor']:
                     tmp = Node(elem)
                     tmp.left = stack.pop()
                     tmp.right = stack.pop()
+                    stack.append(tmp)
+                elif elem == 'not':
+                    tmp = Node(elem)
+                    tmp.left = stack.pop()
                     stack.append(tmp)
                 else:
                     # TODO: something else about the other PLC instructions
@@ -345,6 +350,12 @@ class CodeParse (object):
         self.Instructions['Contact'] = []
         self.Instructions['TON'] = 0
         self.Instructions['TP'] = 0
+        self.Instructions['TOF'] = 0
+        self.Instructions['CTU'] = 0
+        self.Instructions['CTD'] = 0
+        self.Instructions['CTUD'] = 0
+        self.Instructions['F_TRIG'] = 0
+        self.Instructions['R_TRIG'] = 0
 
 
         for elem in self.LD_variable:
@@ -354,7 +365,26 @@ class CodeParse (object):
                 self.Instructions['TON'] += 1
             elif elem == b'TP':
                 self.Instructions['TP'] += 1
+            elif elem == b'TOF':
+                self.Instructions['TOF'] += 1
+            elif elem == b'TP':
+                self.Instructions['CTU'] += 1
+            elif elem == b'TP':
+                self.Instructions['CTD'] += 1
+            elif elem == b'TP':
+                self.Instructions['CTUD'] += 1
+            elif elem ==  b'F_TRIG':
+                self.Instructions['F_TRIG'] += 1
+            elif elem ==  b'R_TRIG':
+                self.Instructions['R_TRIG'] += 1
             else:
                 # TODO: anything else Instruction
                 pass
-            
+
+    """
+        TODO: Update self.rungs after init_instructions()
+    """
+    def update_rungs(self) -> dict:
+        
+        
+        return dict()
