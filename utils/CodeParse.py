@@ -43,6 +43,7 @@ class CodeParse (object):
             "not": not_,
             "shr": shr,
             "rcl": rcl,
+            "test": test,
         }
 
         """
@@ -95,7 +96,6 @@ class CodeParse (object):
 
         print(self.rungs)
         self.get_as_bitree()
-        self.functions_log()
 
 
     """
@@ -112,7 +112,7 @@ class CodeParse (object):
             if len(rung) == 0:
                 continue                
             for elem in rung:
-                if elem == 'Contact':
+                if elem in ['Contact', 'coil']:
                     tmp = Node(elem)
                     stack.append(tmp)
                 elif elem in ['and', 'or']:
@@ -122,6 +122,8 @@ class CodeParse (object):
                     stack.append(tmp)
                 else:
                     # TODO: something else about the other PLC instructions
+                    tmp = Node(elem)
+                    stack.append(tmp)
                     pass
                 
             head = stack.pop()

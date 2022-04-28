@@ -15,6 +15,8 @@ A system to restore a real PLC run logic from the apx file which can be dropped 
 - 3. add features in CodeRun:
     - ~~find variables~~
     - ~~mapping the variables and variables in LDExchangeFile~~
+    - ~~find fBD~~
+    - add FBD in ladder logic tree
 - 4. visualization
 - 5. parse apx file
     - ~~split PK~~

@@ -11,6 +11,7 @@ class Variable (object):
         self.disp = disp    # tag
         self.output_flag = output_flag
         self.input_flag = input_flag
+        self.reverse_flag = False
         self.value = value
 
     def setOutputFlag(self, flag):
@@ -18,6 +19,9 @@ class Variable (object):
 
     def setInputFlag(self, flag):
         self.input_flag = flag
+
+    def setReverseFlag(self, flag):
+        self.reverse_flag = flag
 
     def setValue(self, value):
         self.value = value

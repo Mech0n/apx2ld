@@ -31,6 +31,8 @@ def mov(left, right, inst, cg):
             if cg.recent_variable_base != cg.function_variable_base:
                 payload += "\t maybe it's a coil\n\n"
                 # deal with postfix expression
+                cg.rung.append('coil')
+                cg.rung.append('and')
                 cg.rungs.append(deepcopy(cg.rung))
                 cg.rung.clear()
             else :
@@ -309,6 +311,8 @@ def call(op, inst, cg):
     # mark a PLC instruction
     if op.type == X86_OP_REG and op.value == 'ebx':
         payload += f" someone PLC instruction will be use."
+        cg.rung.append('Instruction')
+        cg.rung.append('and')
 
     cg.add_log(f" ", comment=payload)
 
@@ -322,6 +326,10 @@ def not_(op, inst, cg):
         payload += f" eax is {cg.regs['eax'].value}"
 
     cg.add_log(" ", comment=payload)
+
+def test(left, right, inst, cg):
+    cg.add_log(f"// {inst.mnemonic} not implemented yet",
+               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
 
 
 def leave(op, inst):

@@ -1,4 +1,5 @@
 from re import finditer, search
+from zlib import decompress
 
 class apx(object):
     def __init__(self, filename) -> None:
@@ -14,6 +15,9 @@ class apx(object):
         
         # only use when the file write by ST
         self.source = b""
+
+        # locate data
+        self.data_locate : None | tuple = None
 
     def load_file(self, start, stop):
         with open(self.filename, "rb") as f:
@@ -55,9 +59,39 @@ class apx(object):
 
             if code_start and code_end:
                 self.code = self.load_file(key + code_start.span()[0], key + code_end.span()[1])
+                # locate data
+                self.data_locate = (key, value)
                 return True
         return False
 
+    def extract_LDExchangeFile(self) -> bytes | None:
+        if self.data_locate == None:
+            # TODO: Error msg
+            return 
+
+        zlib_magic = b'\x78[\xDA\x9C]'
+        data = self.load_file(self.data_locate[0], self.data_locate[1])
+        zlib_file = search(zlib_magic, data)
+
+        # No zlibc file in it
+        if zlib_file == None:
+            # TODO: Error msg
+            return 
+
+        zlib_file_start = zlib_file.span()[0]
+
+        origin_data = decompress(data[zlib_file_start:])
+        # print(origin_data)
+        xml_header = b'<\\?xml version="1\\.0" encoding="UTF-8" standalone="yes"\\?>'
+        target_data = search(xml_header, origin_data)
+
+        if target_data == None:
+            # TODO: Error msg
+            return
+        
+        target_data_start = target_data.span()[0]
+        # print(origin_data[target_data_start+55:])
+        return origin_data[target_data_start+55:]
 
 if __name__ == "__main__":
     a = apx("../Station.apx")

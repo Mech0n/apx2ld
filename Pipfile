@@ -10,10 +10,15 @@ black = "*"
 rich = "*"
 graphviz = "*"
 jupyter = "*"
-binwalk = {git = "https://github.com/ReFirmLabs/binwalk"}
 
 [dev-packages]
 autopep8 = "*"
+capstone = "*"
+isort = "*"
+black = "*"
+rich = "*"
+graphviz = "*"
+jupyter = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.10"
