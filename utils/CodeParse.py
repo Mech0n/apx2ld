@@ -239,12 +239,13 @@ class CodeParse (object):
                     variable_key = str(displacement)
                     if variable_key not in self.variables:
                         self.variables[variable_key] = dict()
-                    if self.recent_variable_base == self.function_variable_base and variable_key != self.function_variable_base:
+                    if self.recent_variable_base == self.function_variable_base and variable_key != self.function_variable_base and self.recent_fbd != None:
                         # insert FBD in self.functions
                         tmp = deepcopy(self.recent_fbd)
-                        if self.regs['ebx'].value not in self.functions:
-                            self.functions[self.regs['ebx'].value] = []
-                        self.functions[self.regs['ebx'].value].append(tmp)    # bx is self.regs['ebx'].value and it's disp and tag.
+                        if self.recent_fbd.disp not in self.functions:
+                            self.functions[self.recent_fbd.disp] = []
+                        # self.functions[self.regs['ebx'].value].append(tmp)    # bx is self.regs['ebx'].value and it's disp and tag.
+                        self.functions[self.recent_fbd.disp].append(tmp)    # bx is self.regs['ebx'].value and it's disp and tag.
                         self.recent_fbd = None
                     self.recent_variable_base = variable_key
 
@@ -316,8 +317,12 @@ class CodeParse (object):
             if inst.mnemonic == 'call' and inst.op_str == 'ebx':
                 self.function_variable_base = str(recent_base)
 
+    """
+        print log msg about functions
+    """
     def functions_log(self) -> None:
         for key, value in self.functions.items():
+            print(f"--------------{key} : {len(value)}--------------------")
             for fbd in value:
                 print(f"{key}:")
                 print("output:")

@@ -94,6 +94,12 @@ def mov(left, right, inst, cg):
         if left.value == 'bx' and right.type == X86_OP_IMM:
             # save FBD disp in ebx, such as mov bx, 0x64
             cg.regs['ebx'].set_value_u16(int(right.value))
+            cg.recent_fbd.set_disp(right.value)
+            
+            # Update functions
+            # cg.rung.append('Instruction')
+            cg.rung.append(str(cg.recent_fbd.disp))
+            cg.rung.append('and')
 
         if left.value == 'ebx' and right.type == X86_OP_MEM:
             # init FBD
@@ -316,8 +322,6 @@ def call(op, inst, cg):
     # mark a PLC instruction
     if op.type == X86_OP_REG and op.value == 'ebx':
         payload += f" someone PLC instruction will be use."
-        cg.rung.append('Instruction')
-        cg.rung.append('and')
 
     cg.add_log(f" ", comment=payload)
 
