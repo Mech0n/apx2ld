@@ -354,10 +354,10 @@ def not_(op, inst, cg):
 
 def test(left, right, inst, cg):
 
-    # # avoid EN disturb identifying `not` logic gate
-    # if left.value == 'eax' and right.value == 'eax' and cg.not_flag:
-    #     if cg.rung[-1] == 'not':
-    #         cg.rung.pop()
+    # avoid EN disturb identifying `not` logic gate
+    if left.value == 'eax' and right.value == 'eax' and cg.not_flag:
+        if cg.rung[-1] == 'not':
+            cg.rung.pop()
 
     cg.add_log(f"// {inst.mnemonic} not implemented yet",
                comment=(f"{inst.mnemonic}\t{inst.op_str};"))
