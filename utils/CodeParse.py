@@ -391,7 +391,7 @@ class CodeParse (object):
                 pass
 
     """
-        TODO: Update self.rungs after parse_instructions()
+        Update self.rungs after parse_instructions()
     """
     def update_rungs(self) -> dict | None:
         func_to_instruction = dict()
