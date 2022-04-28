@@ -64,7 +64,7 @@ class apx(object):
                 return True
         return False
 
-    def extract_LDExchangeFile(self) -> bytes | None:
+    def extract_LDExchangeFile(self) -> list | None:
         if self.data_locate == None:
             # TODO: Error msg
             return 
@@ -81,7 +81,6 @@ class apx(object):
         zlib_file_start = zlib_file.span()[0]
 
         origin_data = decompress(data[zlib_file_start:])
-        # print(origin_data)
         xml_header = b'<\\?xml version="1\\.0" encoding="UTF-8" standalone="yes"\\?>'
         target_data = search(xml_header, origin_data)
 
@@ -90,8 +89,17 @@ class apx(object):
             return
         
         target_data_start = target_data.span()[0]
-        # print(origin_data[target_data_start+55:])
-        return origin_data[target_data_start+55:]
+        # return origin_data[target_data_start+55:]
+
+        LD_variable = []
+        cursor = target_data_start + 55
+        while cursor < len(origin_data):
+            tmp = origin_data[cursor + 1: cursor + origin_data[cursor] + 1]
+            LD_variable.append(tmp)
+            cursor = cursor + origin_data[cursor] + 1
+        
+        return LD_variable
+
 
 if __name__ == "__main__":
     a = apx("../Station.apx")

@@ -69,7 +69,12 @@ def mov(left, right, inst, cg):
                 if cg.recent_variable_base != cg.function_variable_base:
                     payload += "\t maybe it's a contact"
                     # append postfix expression
-                    cg.rung.append('Contact')
+                    try:
+                        # cg.rung.append('Contact')
+                        cg.rung.append(cg.Instructions['Contact'].pop(0))
+                    except Exception as e:
+                        # TODO: Error msg
+                        cg.rung.append('Contact')
                 else:
                     payload += f"\t maybe it's someone instruction's output"
                     cg.recent_fbd.insert_output_list(key)

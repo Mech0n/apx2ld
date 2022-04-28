@@ -10,7 +10,7 @@ from .DataStruct import Node
 
 
 class CodeParse (object):
-    def __init__(self, code, flags) -> None:
+    def __init__(self, code, LD_variable, flags) -> None:
         self.code = code
         self.cCode = ""
 
@@ -79,6 +79,13 @@ class CodeParse (object):
         self.rungs = []
         self.rung = []
 
+        """
+        LD_variable
+        """
+        self.LD_variable = LD_variable
+        self.Instructions = dict()
+        self.init_instructions()
+
         self.jumps = ["jmp", "je", "jne", "jz", "jnz", "jnb", "jb", "jbe"]
         self.usedFlags = flags
 
@@ -112,7 +119,7 @@ class CodeParse (object):
             if len(rung) == 0:
                 continue                
             for elem in rung:
-                if elem in ['Contact', 'coil']:
+                if elem in ['openContact', 'closedContact', 'coil', 'Contact']:
                     tmp = Node(elem)
                     stack.append(tmp)
                 elif elem in ['and', 'or']:
@@ -321,4 +328,28 @@ class CodeParse (object):
                     print(hex(i))
                 print(f"time:\t{fbd.time}")
                 print()
+
+    """
+        Count instructions in self.LD_variable
+    """
+    def init_instructions(self) -> None:
+        if len(self.Instructions) != 0:
+            # TODO: inited long long ago
+            return
+
+        self.Instructions['Contact'] = []
+        self.Instructions['TON'] = 0
+        self.Instructions['TP'] = 0
+
+
+        for elem in self.LD_variable:
+            if elem in [b'openContact', b'closedContact']:
+                self.Instructions['Contact'].append(elem.decode())
+            elif elem == b'TON':
+                self.Instructions['TON'] += 1
+            elif elem == b'TP':
+                self.Instructions['TP'] += 1
+            else:
+                # TODO: anything else Instruction
+                pass
             
