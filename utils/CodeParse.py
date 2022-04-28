@@ -47,6 +47,12 @@ class CodeParse (object):
         }
 
         """
+        LD_variable
+        """
+        self.LD_variable = LD_variable
+        self.Instructions = dict()
+
+        """
         {
             "addr" : {tag1: value, tag2: value},
             "addr" : {tag1: value, tag2: value},
@@ -57,6 +63,7 @@ class CodeParse (object):
         self.recent_variable_base = 0
         self.function_variable_base = 0
         self.function_variable_flag = False
+        self.contacts = []  # save contacts from LD_variable
 
         """
         functions : only save the functions base address and bx value
@@ -80,15 +87,10 @@ class CodeParse (object):
         self.rungs = []
         self.rung = []
 
-        """
-        LD_variable
-        """
-        self.LD_variable = LD_variable
-        self.Instructions = dict()
-        self.init_instructions()
-
         self.jumps = ["jmp", "je", "jne", "jz", "jnz", "jnb", "jb", "jbe"]
         self.usedFlags = flags
+
+        self.parse_instructions()
 
         # Init capstone
         self.cs = Cs(CS_ARCH_X86, CS_MODE_32)
@@ -112,7 +114,16 @@ class CodeParse (object):
         - and   : each node has an and relationship with left node
     """
     # TODO transplant to output module
-    def get_as_bitree(self) -> list:
+    def get_as_bitree(self) -> list|None:
+        try:
+            # init mapping use method update_rungs
+            func_to_instruction = self.update_rungs()
+            if func_to_instruction == None:
+                raise Exception
+        except Exception as e:
+            # TODO: Error msg
+            return None
+            
         bitrees = []
         stack = []
         head = None
@@ -134,7 +145,7 @@ class CodeParse (object):
                     stack.append(tmp)
                 else:
                     # TODO: something else about the other PLC instructions
-                    tmp = Node(elem)
+                    tmp = Node(func_to_instruction[elem])
                     stack.append(tmp)
                     pass
                 
@@ -342,25 +353,23 @@ class CodeParse (object):
     """
         Count instructions in self.LD_variable
     """
-    def init_instructions(self) -> None:
+    def parse_instructions(self) -> None:
         if len(self.Instructions) != 0:
             # TODO: inited long long ago
             return
 
-        self.Instructions['Contact'] = []
-        self.Instructions['TON'] = 0
-        self.Instructions['TP'] = 0
-        self.Instructions['TOF'] = 0
-        self.Instructions['CTU'] = 0
-        self.Instructions['CTD'] = 0
-        self.Instructions['CTUD'] = 0
-        self.Instructions['F_TRIG'] = 0
-        self.Instructions['R_TRIG'] = 0
+        instruction_names = [b'TON', b'TP', b'TOF', b'CTU', b'CTD', b'CTUD', b'F_TRIG', b'R_TRIG']
+        
+        # init self.Instructions
+        self.contacts = []
+        for elem in self.LD_variable:
+            if elem in instruction_names:
+                self.Instructions[elem.decode()] = 0
 
-
+        # count instructions
         for elem in self.LD_variable:
             if elem in [b'openContact', b'closedContact']:
-                self.Instructions['Contact'].append(elem.decode())
+                self.contacts.append(elem.decode())
             elif elem == b'TON':
                 self.Instructions['TON'] += 1
             elif elem == b'TP':
@@ -382,9 +391,19 @@ class CodeParse (object):
                 pass
 
     """
-        TODO: Update self.rungs after init_instructions()
+        TODO: Update self.rungs after parse_instructions()
     """
-    def update_rungs(self) -> dict:
-        
-        
-        return dict()
+    def update_rungs(self) -> dict | None:
+        func_to_instruction = dict()
+        try:
+            func_keys = list(self.functions.keys())
+            Inst_keys = list(self.Instructions.keys())
+            if len(func_keys) != len(Inst_keys):
+                raise Exception
+            
+            for idx in range(len(func_keys)):
+                func_to_instruction[func_keys[idx]] = Inst_keys[idx]
+            return func_to_instruction
+        except Exception as e:
+            # TODO: Error msg
+            return None

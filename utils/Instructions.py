@@ -73,7 +73,7 @@ def mov(left, right, inst, cg):
                     # append postfix expression
                     try:
                         # cg.rung.append('Contact')
-                        cg.rung.append(cg.Instructions['Contact'].pop(0))
+                        cg.rung.append(cg.contacts.pop(0))
                     except Exception as e:
                         # TODO: Error msg
                         cg.rung.append('Contact')
@@ -85,7 +85,6 @@ def mov(left, right, inst, cg):
             p = compile('ebp-[0-9a-fA-Fx]+')
             m = p.match(right.value)
             if m:
-                print(m.group())
                 cg.not_flag = True
 
 
