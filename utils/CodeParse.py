@@ -136,8 +136,15 @@ class CodeParse (object):
                     stack.append(tmp)
                 elif elem in ['and', 'or', 'xor']:
                     tmp = Node(elem)
-                    tmp.left = stack.pop()
-                    tmp.right = stack.pop()
+                    if stack[-1].value in ['CTD', 'CTU']:
+                        func = stack.pop()
+                        func.left = stack.pop()
+                        func.right = stack.pop()
+                        stack.append(func)
+                        tmp.left = stack.pop()
+                    else:
+                        tmp.left = stack.pop()
+                        tmp.right = stack.pop()
                     stack.append(tmp)
                 elif elem == 'not':
                     tmp = Node(elem)
@@ -145,7 +152,8 @@ class CodeParse (object):
                     stack.append(tmp)
                 else:
                     # TODO: something else about the other PLC instructions
-                    tmp = Node(func_to_instruction[elem])
+                    func = func_to_instruction[elem]
+                    tmp = Node(func)
                     stack.append(tmp)
                     pass
                 
@@ -376,11 +384,11 @@ class CodeParse (object):
                 self.Instructions['TP'] += 1
             elif elem == b'TOF':
                 self.Instructions['TOF'] += 1
-            elif elem == b'TP':
+            elif elem == b'CTU':
                 self.Instructions['CTU'] += 1
-            elif elem == b'TP':
+            elif elem == b'CTD':
                 self.Instructions['CTD'] += 1
-            elif elem == b'TP':
+            elif elem == b'CTUD':
                 self.Instructions['CTUD'] += 1
             elif elem ==  b'F_TRIG':
                 self.Instructions['F_TRIG'] += 1
