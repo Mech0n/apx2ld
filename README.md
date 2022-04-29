@@ -8,6 +8,14 @@ A system to restore a real PLC run logic from the apx file which can be dropped 
 - restore a PLC run logic from the bytecode
 - ~~visualization~~
 
+### Usage
+
+```
+pipenv install
+pipenv shell
+...
+```
+
 ### TODO
 
 - 1. ~~module for finding variables -> flags~~

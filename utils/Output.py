@@ -1,15 +1,24 @@
 from graphviz import Digraph
+from os import makedirs
+from os.path import exists
 
 # Create Digraph object
 
 class Output(object):
-    def __init__(self) -> None:
+    def __init__(self, output_name, basedir="release") -> None:
         self.dot = None
+        self.basedir = basedir
+        self.output_name = output_name
+
+        print(self.basedir)
+
+        if not exists(self.basedir):
+            makedirs(self.basedir)
     
-    def save_img(self, output_name) -> None:
+    def save_img(self) -> None:
         
         if self.dot != None:
-            self.dot.render(outfile=f'./{output_name}svg').replace('\\', '/')
+            self.dot.render(outfile=f'./{self.basedir}/{self.output_name}.svg').replace('\\', '/')
 
     def add_nodes_edges(self, tree) -> None:
         # print(id(dot))

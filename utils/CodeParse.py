@@ -10,7 +10,7 @@ from .Register import register
 from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
 
-class CodeParse (object):
+class Code_Parse (object):
     def __init__(self, code, LD_variable, flags) -> None:
         self.code = code
         self.cCode = ""
@@ -105,8 +105,7 @@ class CodeParse (object):
 
         self.run()
 
-        print(self.rungs)
-        self.get_as_bitree()
+        # self.get_as_bitree()
 
 
     """
@@ -177,8 +176,8 @@ class CodeParse (object):
                     print(' ' * 4 * level + '-> ' + node.value)
                     printTree(node.right, level + 1)
             
-            printTree(head)
-            print()
+            # printTree(head)
+            # print()
             head = None
         
         return bitrees
