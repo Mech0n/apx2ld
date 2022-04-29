@@ -133,8 +133,15 @@ class CodeParse (object):
                 continue                
             for elem in rung:
                 if elem in ['openContact', 'closedContact', 'coil', 'Contact']:
-                    tmp = Node(elem)
-                    stack.append(tmp)
+                    try:
+                        disp = stack.pop()
+                        if type(disp) is not str:
+                            raise Exception
+                        tmp = Node(f"{elem}_{disp}")
+                        stack.append(tmp)
+                    except Exception as e:
+                        # TODO Error msg
+                        return None
                 elif elem in ['and', 'or', 'xor']:
                     tmp = Node(elem)
                     if stack[-1].value in ['CTD', 'CTU']:
@@ -151,6 +158,8 @@ class CodeParse (object):
                     tmp = Node(elem)
                     tmp.left = stack.pop()
                     stack.append(tmp)
+                elif 'disp' in elem:
+                    stack.append(elem)
                 else:
                     # something else about the other PLC instructions
                     func = func_to_instruction[elem]

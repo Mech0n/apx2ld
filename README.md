@@ -17,9 +17,10 @@ A system to restore a real PLC run logic from the apx file which can be dropped 
     - ~~mapping the variables and variables in LDExchangeFile~~
     - ~~find fBD~~
     - ~~add FBD in ladder logic tree~~
-    - add Multiple input FBD in ladder logic tree
+    - ~~add Multiple input FBD in ladder logic tree~~
+    - support CTUD
 - 4. visualization
-- 5. parse apx file
+- 5. ~~parse apx file~~
     - ~~split PK~~
     - ~~split zlib~~
 

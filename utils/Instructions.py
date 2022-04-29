@@ -31,6 +31,7 @@ def mov(left, right, inst, cg):
             if cg.recent_variable_base != cg.function_variable_base:
                 payload += "\t maybe it's a coil\n\n"
                 # deal with postfix expression
+                cg.rung.append(f"disp_{hex(key)}")
                 cg.rung.append('coil')
                 cg.rung.append('and')
                 cg.rungs.append(deepcopy(cg.rung))
@@ -73,9 +74,11 @@ def mov(left, right, inst, cg):
                     # append postfix expression
                     try:
                         # cg.rung.append('Contact')
+                        cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append(cg.contacts.pop(0))
                     except Exception as e:
                         # TODO: Error msg
+                        cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append('Contact')
                 else:
                     payload += f"\t maybe it's someone instruction's output"
