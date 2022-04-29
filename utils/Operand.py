@@ -1,5 +1,5 @@
-from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 from .Register import regsScale, regsSize
+from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
 
 class Operand:

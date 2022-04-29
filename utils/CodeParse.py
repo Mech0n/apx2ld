@@ -1,12 +1,13 @@
-from capstone import CS_ARCH_X86, CS_MODE_32, Cs
 from copy import deepcopy
 
+from capstone import CS_ARCH_X86, CS_MODE_32, Cs
+
+from .DataStruct import Node
 from .Instructions import *
 from .Operand import Operand
-from .PLCInstructions import Variable, FBD
-from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
+from .PLCInstructions import FBD, Variable
 from .Register import register
-from .DataStruct import Node
+from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
 
 class CodeParse (object):
@@ -50,7 +51,7 @@ class CodeParse (object):
         LD_variable
         """
         self.LD_variable = LD_variable
-        self.Instructions = dict()
+        self.Instructions = {}
 
         """
         {
@@ -59,7 +60,7 @@ class CodeParse (object):
         }
         """
         self.not_flag = False   # if not_flag == True, al' value is from ptr [epb - 0xbalaba]
-        self.variables = dict()
+        self.variables = {}
         self.recent_variable_base = 0
         self.function_variable_base = 0
         self.function_variable_flag = False
@@ -72,13 +73,13 @@ class CodeParse (object):
             disp: [FBD, ]
         }
         """
-        self.functions = dict()
+        self.functions = {}
         self.recent_fbd = None
 
         """
         "ebx" : reg
         """
-        self.regs = dict()
+        self.regs = {}
         self.init_regs()
 
         """
@@ -151,11 +152,10 @@ class CodeParse (object):
                     tmp.left = stack.pop()
                     stack.append(tmp)
                 else:
-                    # TODO: something else about the other PLC instructions
+                    # something else about the other PLC instructions
                     func = func_to_instruction[elem]
                     tmp = Node(func)
                     stack.append(tmp)
-                    pass
                 
             head = stack.pop()
             bitrees.append(head)
@@ -163,7 +163,7 @@ class CodeParse (object):
             stack.clear()
 
             def printTree(node, level=0):
-                if node != None:
+                if node is not None:
                     printTree(node.left, level + 1)
                     print(' ' * 4 * level + '-> ' + node.value)
                     printTree(node.right, level + 1)
@@ -248,7 +248,7 @@ class CodeParse (object):
             displacement = operand.mem.disp  # adddress
             index, scale = (operand.mem.index, operand.mem.scale)
 
-            if baseReg != None:
+            if baseReg is not None:
                 out = baseReg
 
                 # init variable
@@ -262,8 +262,8 @@ class CodeParse (object):
                 if displacement > 0x4000000:
                     variable_key = str(displacement)
                     if variable_key not in self.variables:
-                        self.variables[variable_key] = dict()
-                    if self.recent_variable_base == self.function_variable_base and variable_key != self.function_variable_base and self.recent_fbd != None:
+                        self.variables[variable_key] = {}
+                    if self.recent_variable_base == self.function_variable_base and variable_key != self.function_variable_base and self.recent_fbd is not None:
                         # insert FBD in self.functions
                         tmp = deepcopy(self.recent_fbd)
                         if self.recent_fbd.disp not in self.functions:
@@ -388,7 +388,7 @@ class CodeParse (object):
                 self.Instructions['CTU'] += 1
             elif elem == b'CTD':
                 self.Instructions['CTD'] += 1
-            elif elem == b'CTUD':
+            elif elem == b'CTUD':   # CTUD not implementation
                 self.Instructions['CTUD'] += 1
             elif elem ==  b'F_TRIG':
                 self.Instructions['F_TRIG'] += 1
@@ -402,7 +402,7 @@ class CodeParse (object):
         Update self.rungs after parse_instructions()
     """
     def update_rungs(self) -> dict | None:
-        func_to_instruction = dict()
+        func_to_instruction = {}
         try:
             func_keys = list(self.functions.keys())
             Inst_keys = list(self.Instructions.keys())

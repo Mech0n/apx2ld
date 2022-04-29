@@ -1,4 +1,5 @@
 from graphviz import Digraph
+
 # Create Digraph object
 
 class Output(object):

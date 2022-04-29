@@ -1,8 +1,8 @@
-from re import compile
 from copy import deepcopy
+from re import compile
 
-from .x86_const import X86_OP_MEM, X86_OP_REG, X86_OP_IMM
 from .PLCInstructions import FBD
+from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
 # Overflow flag mask
 ofMask = {1: 0x80, 2: 0x8000, 4: 0x80000000, 8: 0x8000000000000000}

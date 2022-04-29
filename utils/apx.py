@@ -1,6 +1,7 @@
 from re import finditer, search
 from zlib import decompress
 
+
 class apx(object):
     def __init__(self, filename) -> None:
         self.filename = filename
