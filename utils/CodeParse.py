@@ -13,7 +13,6 @@ from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 class Code_Parse (object):
     def __init__(self, code, LD_variable, flags) -> None:
         self.code = code
-        self.cCode = ""
 
         # Instruction lookup
         self.cinstr = {
@@ -65,6 +64,7 @@ class Code_Parse (object):
         self.function_variable_base = 0
         self.function_variable_flag = False
         self.contacts = []  # save contacts from LD_variable
+        self.coils = []
 
         """
         functions : only save the functions base address and bx value
@@ -87,6 +87,7 @@ class Code_Parse (object):
         """
         self.rungs = []
         self.rung = []
+        self.rung_end = False
 
         self.jumps = ["jmp", "je", "jne", "jz", "jnz", "jnb", "jb", "jbe"]
         self.usedFlags = flags
@@ -104,6 +105,10 @@ class Code_Parse (object):
         self.find_function_base()
 
         self.run()
+
+        if len(self.rung) != 0:
+            self.rungs.append(deepcopy(self.rung))
+            self.rung.clear()
 
         # self.get_as_bitree()
 
@@ -131,7 +136,7 @@ class Code_Parse (object):
             if len(rung) == 0:
                 continue                
             for elem in rung:
-                if elem in ['openContact', 'closedContact', 'coil', 'Contact']:
+                if elem in ['openContact', 'closedContact', 'coil', 'Contact', 'resetCoil', 'setCoil']:
                     try:
                         disp = stack.pop()
                         if type(disp) is not str:
@@ -222,8 +227,8 @@ class Code_Parse (object):
 
             # If we will jump to this instruction
             # Add label for goto
-            if inst.address in self.jumpPlaces:
-                self.add_log(f"_{hex(inst.address)}:", indent=0)
+            # if inst.address in self.jumpPlaces:
+            #     self.add_log(f"_{hex(inst.address)}:", indent=0)
 
             # Operands is list of ops, 0, 1, 2 (may more) ops
             ops = [x for x in inst.operands]
@@ -309,28 +314,6 @@ class Code_Parse (object):
         Spaces FTW
     """
 
-    def add_log(self, data, flags="", actions="", comment="", indent=1):
-        self.cCode += "    " * indent
-        self.cCode += data + "; "
-
-        # Append comment
-        if len(comment):
-            self.cCode += f"// {comment} \n"
-
-        # Check is flag used, and append
-        if len(flags):
-            for (id, flag) in flags:
-                if id in self.usedFlags:
-                    self.cCode += ("    " * indent) + "  " + flag + ";\n"
-
-        # Add actions, executed after setting flags
-        if len(actions):
-            for action in actions:
-                self.cCode += ("    " * indent) + "    " + action + ";\n"
-
-        if len(comment) == 0 and len(flags) == 0:
-            self.cCode += "\n"
-
     def init_regs(self) -> None:
         for reg_name in ['eax', 'ebx', 'ecx', 'edx'] :
             self.regs[reg_name] = register(reg_name)
@@ -386,6 +369,8 @@ class Code_Parse (object):
         for elem in self.LD_variable:
             if elem in [b'openContact', b'closedContact']:
                 self.contacts.append(elem.decode())
+            if elem in [b'resetCoil', b'setCoil', b'coil']:
+                self.coils.append(elem.decode())
             elif elem == b'TON':
                 self.Instructions['TON'] += 1
             elif elem == b'TP':

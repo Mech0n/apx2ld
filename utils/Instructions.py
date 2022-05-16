@@ -16,7 +16,6 @@ mem_default_value = 1
 
 
 def mov(left, right, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
 
     # set output variable, such as : mov byte ptr [ebx + 0xc], al/dl / mov dword ptr [ebx + 0xc], eax
     if left.type == X86_OP_MEM:
@@ -29,17 +28,24 @@ def mov(left, right, inst, cg):
                 cg.variables[cg.recent_variable_base][key].setOutputFlag(True)
 
             if cg.recent_variable_base != cg.function_variable_base:
-                payload += "\t maybe it's a coil\n\n"
+                # maybe it's a coil
                 # deal with postfix expression
+                cg.rung_end = True
                 cg.rung.append(f"disp_{hex(key)}")
-                cg.rung.append('coil')
+                cg.rung.append(cg.coils.pop(0))
+                # cg.rung.append('coil')
                 cg.rung.append('and')
-                cg.rungs.append(deepcopy(cg.rung))
-                cg.rung.clear()
+
+                # cg.rung.append(f"disp_{hex(key)}")
+                # cg.rung.append('coil')
+                # cg.rung.append('and')
+                # cg.rungs.append(deepcopy(cg.rung))
+                # cg.rung.clear()
+
             else :
                 if right.type == X86_OP_REG and right.value in ['al', 'eax']:
-                    payload += "\t maybe it's someone's parameter"
-                    payload += f", which value is {cg.regs['eax'].value}"
+                    # maybe it's someone's parameter
+                    # which value is {cg.regs['eax'].value}
                     cg.recent_fbd.insert_input_list(key)
 
                     # TODO: FBD time
@@ -70,9 +76,14 @@ def mov(left, right, inst, cg):
 
                 # decide if contact
                 if cg.recent_variable_base != cg.function_variable_base:
-                    payload += "\t maybe it's a contact"
+                    # maybe it's a contact
                     # append postfix expression
                     try:
+                        if cg.rung_end == True:
+                            cg.rung_end = False
+                            # decided a single rung
+                            cg.rungs.append(deepcopy(cg.rung))
+                            cg.rung.clear()
                         # cg.rung.append('Contact')
                         cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append(cg.contacts.pop(0))
@@ -80,8 +91,17 @@ def mov(left, right, inst, cg):
                         # TODO: Error msg
                         cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append('Contact')
+
+                    # try:
+                    #     # cg.rung.append('Contact')
+                    #     cg.rung.append(f"disp_{hex(key)}")
+                    #     cg.rung.append(cg.contacts.pop(0))
+                    # except Exception as e:
+                    #     # TODO: Error msg
+                    #     cg.rung.append(f"disp_{hex(key)}")
+                    #     cg.rung.append('Contact')
                 else:
-                    payload += f"\t maybe it's someone instruction's output"
+                    # maybe it's someone instruction's output
                     cg.recent_fbd.insert_output_list(key)
                 return
             
@@ -94,7 +114,7 @@ def mov(left, right, inst, cg):
         # handle eax for funcs parameter, such as : mov eax, 0x1222
         elif right.type == X86_OP_IMM:
             cg.regs['eax'].set_value_u32(int(right.value))
-            payload += f" maybe it's someone's parameter, which value is {cg.regs['eax'].value}"
+            # maybe it's someone's parameter, which value is {cg.regs['eax'].value}
 
             # if cg.recent_fbd != None:
             #     cg.recent_fbd.set_time(int(right.value))
@@ -126,109 +146,28 @@ def mov(left, right, inst, cg):
                         cg.function_variable_flag = False
 
 
-    cg.add_log(
-        "%s = %s" % (left.getValue(), right.getValue()),
-        comment=payload,
-    )
-
-
 def movzx(left, right, inst, cg):
-    cg.add_log(
-        "%s = 0, %s = %s" % (left.getValue(
-            8), left.getValue(), right.getValue()),
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def sub(left, right, inst, cg, isCmp=False):
-    sizeBits, sizeBytes = (left.sizeBits, left.sizeBytes)
-    lVal, rVal = (left.getValue(), right.getValue())
-
-    if isCmp:
-        actions = []
-    else:
-        actions = ["%s = tmp%s" % (lVal, sizeBits)]
-
-    cg.add_log(
-        "TMP%s(%s, -, %s)" % (sizeBits, lVal, rVal),
-        flags=[
-            ["c", "SET_CF_SUB(%s, %s)" % (lVal, rVal)],
-            ["z", "SET_ZF(%s)" % (sizeBits)],
-            ["a", "SET_AF_0(%s, %s)" % (left.getValue(1), right.getValue(1))],
-            [
-                "o",
-                "SET_OF_SUB(%s, %s, %s, %s)"
-                % (lVal, rVal, sizeBits, hex(ofMask[sizeBytes])),
-            ],
-        ],
-        actions=actions,
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def add(left, right, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
-
-    sizeBits, sizeBytes = (left.sizeBits, left.sizeBytes)
-    lVal, rVal = (left.getValue(), right.getValue())
-
-    cg.add_log(
-        "TMP%s(%s, +, %s)" % (sizeBits, lVal, rVal),
-        flags=[
-            ["c", "SET_CF_ADD(%s, %s)" % (sizeBits, lVal)],
-            ["z", "SET_ZF(%s)" % (sizeBits)],
-            ["a", "SET_AF_0(%s, %s)" % (left.getValue(1), right.getValue(1))],
-            [
-                "o",
-                "SET_OF_ADD(%s, %s, %s, %s)"
-                % (lVal, rVal, sizeBits, hex(ofMask[sizeBytes])),
-            ],
-        ],
-        actions=["%s = tmp%s" % (lVal, sizeBits)],
-        comment=payload,
-    )
+    pass
 
 
 def inc(left, inst, cg):
-    sizeBits, sizeBytes = (left.sizeBits, left.sizeBytes)
-    lVal, rVal = left.getValue(), "1"
-
-    cg.add_log(
-        "TMP%s(%s, +, %s)" % (sizeBits, lVal, rVal),
-        flags=[
-            ["z", "SET_ZF(%s)" % (sizeBits)],
-            ["a", "SET_AF_INC(%s)" % (sizeBits)],
-            ["o", "SET_OF_INC_DEC_NEG(%s, %s)" % (
-                sizeBits, hex(ofMask[sizeBytes]))],
-        ],
-        actions=["%s = tmp%s" % (lVal, sizeBits)],
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def dec(left, inst, cg):
-    sizeBits, sizeBytes = (left.sizeBits, left.sizeBytes)
-    lVal, rVal = left.getValue(), "1"
-
-    cg.add_log(
-        "TMP%s(%s, -, %s)" % (sizeBits, lVal, rVal),
-        flags=[
-            ["z", "SET_ZF(%s)" % (sizeBits)],
-            ["a", "SET_AF_DEC(%s)" % (sizeBits)],
-            [
-                "o",
-                "SET_OF_INC_DEC_NEG(%s, %s)" % (
-                    sizeBits, hex(ofMask[sizeBytes] - 1)),
-            ],
-        ],
-        actions=["%s = tmp%s" % (lVal, sizeBits)],
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def cdqe(inst, cg):
-    cg.add_log("// cdqe not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
+    pass
 
 
 def cmp(left, right, inst, cg):
@@ -237,48 +176,31 @@ def cmp(left, right, inst, cg):
 
 
 def jmp(op, inst, cg):
-    cg.add_log(f"goto _{hex(int(op.value))}", comment=(
-        f"{inst.mnemonic}\t{inst.op_str};"))
+    pass
 
 
 def jne(op, inst, cg):
-    cg.add_log(
-        f"if(!zf)\n        goto _{hex(int(op.value))}",
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def je(op, inst, cg):
-    cg.add_log(
-        f"if(zf)\n         goto _{hex(int(op.value))}",
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def jb(op, inst, cg):
-    cg.add_log(
-        f"if(cf)\n         goto _{hex(int(op.value))};",
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def jbe(op, inst, cg):
-    cg.add_log(
-        f"if(cf == 1 || zf == 1)\n      goto _{hex(int(op.value))}",
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def jnb(op, inst, cg):
-    cg.add_log(
-        f"if(!cf)\n        goto _{hex(int(op.value))}",
-        comment=(f"{inst.mnemonic}\t{inst.op_str};"),
-    )
+    pass
 
 
 def enter(left, right, inst, cg):
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
+    pass
 
 
 def and_(left, right, inst, cg):
@@ -286,21 +208,13 @@ def and_(left, right, inst, cg):
     if left.value == 'al' and right.value == 'cl':
         cg.rung.append('and')
 
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
-
 
 def push(op, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
-    if op.type == X86_OP_IMM and op.value == '0':
-        payload = payload + '\n\n'
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=payload)
+    pass
 
 
 def pop(op, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
-    cg.add_log(f"// {inst.mnemonic} not implemented yet", comment=payload)
+    pass
 
 
 def or_(left, right, inst, cg):
@@ -308,62 +222,45 @@ def or_(left, right, inst, cg):
     if left.value == 'al' and right.value == 'cl':
         cg.rung.append('or')
 
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
-
 
 def xor(left, right, inst, cg):
     # append postfix expression
     if left.value == 'al' and right.value == 'cl':
         cg.rung.append('xor')
 
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
-
 
 def shr(left, right, inst, cg):
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
+    pass
 
 
 def rcl(left, right, inst, cg):
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
+    pass
 
 
 def call(op, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
-
     # mark a PLC instruction
     if op.type == X86_OP_REG and op.value == 'ebx':
-        payload += f" someone PLC instruction will be use."
+        # someone PLC instruction will be use.
+        pass
 
-    cg.add_log(f" ", comment=payload)
 
 
 def not_(op, inst, cg):
-    payload = f"{inst.mnemonic}\t{inst.op_str};"
-
     # handle eax
     if op.type == X86_OP_REG and op.value == 'eax':
         cg.regs['eax'].set_value_u32(cg.regs['eax'].value)
-        payload += f" eax is {cg.regs['eax'].value}"
+        # eax is {cg.regs['eax'].value}
 
         # identify not Logic gate
         if cg.not_flag:
             cg.rung.append('not')
 
-    cg.add_log(" ", comment=payload)
 
 def test(left, right, inst, cg):
-
     # avoid EN disturb identifying `not` logic gate
     if left.value == 'eax' and right.value == 'eax' and cg.not_flag:
         if cg.rung[-1] == 'not':
             cg.rung.pop()
-
-    cg.add_log(f"// {inst.mnemonic} not implemented yet",
-               comment=(f"{inst.mnemonic}\t{inst.op_str};"))
 
 
 def leave(op, inst):
