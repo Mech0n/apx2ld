@@ -1,6 +1,8 @@
 from copy import deepcopy
 from re import compile
 
+from rich.console import Console
+
 from .PLCInstructions import FBD
 from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
@@ -48,7 +50,7 @@ def mov(left, right, inst, cg):
                     # which value is {cg.regs['eax'].value}
                     cg.recent_fbd.insert_input_list(key)
 
-                    # TODO: FBD time
+                    # FBD time
                     if right.value == 'eax' and left.sizeBytes == 4:
                         if cg.recent_fbd != None:
                             cg.recent_fbd.set_time(int(cg.regs['eax'].value))
@@ -88,7 +90,8 @@ def mov(left, right, inst, cg):
                         cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append(cg.contacts.pop(0))
                     except Exception as e:
-                        # TODO: Error msg
+                        with Console() as c:
+                            c.print(f"[Module] Instructions [Method] mov: Cant generate a specified Contact! {e}")
                         cg.rung.append(f"disp_{hex(key)}")
                         cg.rung.append('Contact')
 
@@ -97,7 +100,6 @@ def mov(left, right, inst, cg):
                     #     cg.rung.append(f"disp_{hex(key)}")
                     #     cg.rung.append(cg.contacts.pop(0))
                     # except Exception as e:
-                    #     # TODO: Error msg
                     #     cg.rung.append(f"disp_{hex(key)}")
                     #     cg.rung.append('Contact')
                 else:

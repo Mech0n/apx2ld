@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from capstone import CS_ARCH_X86, CS_MODE_32, Cs
+from rich.console import Console
 
 from .DataStruct import Node
 from .Instructions import *
@@ -50,6 +51,10 @@ class Code_Parse (object):
         LD_variable
         """
         self.LD_variable = LD_variable
+        if b'CTUD' in LD_variable:
+            with Console() as c:
+                c.print("[logs] [Module] CodeParse [Method] __init__: CTUD instruction not implement!")
+            exit(0)
         self.Instructions = {}
 
         """
@@ -127,6 +132,8 @@ class Code_Parse (object):
                 raise Exception
         except Exception as e:
             # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] CodeParse [Method] get_as_bitree: update_rungs error! {e}")
             return None
             
         bitrees = []
@@ -145,6 +152,8 @@ class Code_Parse (object):
                         stack.append(tmp)
                     except Exception as e:
                         # TODO Error msg
+                        with Console() as c:
+                            c.print(f"[Module] CodeParse [Method] get_as_bitree: Generate Contact/Coil error! {e}")
                         return None
                 elif elem in ['and', 'or', 'xor']:
                     tmp = Node(elem)
@@ -223,7 +232,8 @@ class Code_Parse (object):
 
     def run(self):
         for inst in self.instructions:
-            print(f"logs : {inst.mnemonic}\t{inst.op_str}")
+            with Console() as c:
+                c.print(f"[logs] [Module] CodeParse [Method] run : {inst.mnemonic}\t{inst.op_str}")
 
             # If we will jump to this instruction
             # Add label for goto
@@ -236,7 +246,8 @@ class Code_Parse (object):
 
             # check Instruction is available
             if inst.mnemonic not in self.cinstr:
-                print("Instruction not found...\nQuitting...")
+                with Console() as c:
+                    c.print(f"[logs] [Module] CodeParse [Method] run:  asm instruction not found")
                 exit(0)
 
             # process instruction
@@ -298,7 +309,6 @@ class Code_Parse (object):
 
                 # init funcs
                 if displacement == 0x4000000:
-                    #TODO funcs
                     pass
             
             # print(out)
@@ -354,7 +364,8 @@ class Code_Parse (object):
     """
     def parse_instructions(self) -> None:
         if len(self.Instructions) != 0:
-            # TODO: inited long long ago
+            with Console() as c:
+                c.print(f"[Module] CodeParse [Method] parse_instructions: Instruction parsed before!")
             return
 
         instruction_names = [b'TON', b'TP', b'TOF', b'CTU', b'CTD', b'CTUD', b'F_TRIG', b'R_TRIG']
@@ -388,7 +399,6 @@ class Code_Parse (object):
             elif elem ==  b'R_TRIG':
                 self.Instructions['R_TRIG'] += 1
             else:
-                # TODO: anything else Instruction
                 pass
 
     """
@@ -406,5 +416,6 @@ class Code_Parse (object):
                 func_to_instruction[func_keys[idx]] = Inst_keys[idx]
             return func_to_instruction
         except Exception as e:
-            # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] CodeParse [Method] update_rungs: {e}")
             return None

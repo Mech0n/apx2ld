@@ -1,3 +1,5 @@
+from rich.console import Console
+
 from .Register import regsScale, regsSize
 from .x86_const import X86_OP_IMM, X86_OP_MEM, X86_OP_REG
 
@@ -32,9 +34,13 @@ class Operand:
         return self.value
 
     def getValue(self, size=0):
-        if self.type == X86_OP_MEM:
-            return self.getAsMemoryRef(size)
-        elif self.type == X86_OP_IMM or self.type == X86_OP_REG:
-            return self.getAsRegImm(size)
+        try:
+            if self.type == X86_OP_MEM:
+                return self.getAsMemoryRef(size)
+            elif self.type == X86_OP_IMM or self.type == X86_OP_REG:
+                return self.getAsRegImm(size)
 
-        raise Exception("!!!")
+            raise Exception("!!!")
+        except Exception as e:
+            with Console() as c:
+                c.print(f"[Module] Operand [Method] getValue: {e}")

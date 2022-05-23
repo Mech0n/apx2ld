@@ -1,6 +1,8 @@
 from re import finditer, search
 from zlib import decompress
 
+from rich.console import Console
+
 
 class apx(object):
     def __init__(self, filename) -> None:
@@ -32,7 +34,8 @@ class apx(object):
 
     def extract_pkfile(self) -> None:
         if len(self.pkzip_files) != 0:
-            # TODO: warning msg
+            with Console() as c:
+                c.print(f"[Module] Apx [Method] extract_pkfile: pkfile extracted before!")
             return
         magic = b"PK\001\002"
         data = self.load_file_all()
@@ -67,7 +70,8 @@ class apx(object):
 
     def extract_LDExchangeFile(self) -> list | None:
         if self.data_locate == None:
-            # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] Apx [Method] extract_LDExchangeFile: LDExchangeFile extracted before!")
             return 
 
         zlib_magic = b'\x78[\xDA\x9C]'
@@ -76,7 +80,8 @@ class apx(object):
 
         # No zlibc file in it
         if zlib_file == None:
-            # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] Apx [Method] extract_pkfile: No zlibc file in it!")
             return 
 
         zlib_file_start = zlib_file.span()[0]
@@ -86,7 +91,8 @@ class apx(object):
         target_data = search(xml_header, origin_data)
 
         if target_data == None:
-            # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] Apx [Method] extract_pkfile: No xml file in it, cant find PLC symbols!")
             return
         
         target_data_start = target_data.span()[0]

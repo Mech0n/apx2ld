@@ -1,6 +1,8 @@
-from graphviz import Digraph
 from os import makedirs
 from os.path import exists
+
+from graphviz import Digraph
+from rich.console import Console
 
 # Create Digraph object
 
@@ -10,8 +12,6 @@ class Output(object):
         self.basedir = basedir
         self.output_name = output_name
 
-        print(self.basedir)
-
         if not exists(self.basedir):
             makedirs(self.basedir)
     
@@ -19,12 +19,16 @@ class Output(object):
         
         if self.dot != None:
             self.dot.render(outfile=f'./{self.basedir}/{self.output_name}.svg').replace('\\', '/')
+            with Console() as c:
+                c.print(f"[logs] [Module] Output [Method] Save result img as ./{self.basedir}/{self.output_name}.svg")
+                c.print(f"[logs] [Module] Output [Method] You can get gv file as ./{self.basedir}/{self.output_name}.gv")
 
     def add_nodes_edges(self, tree) -> None:
         # print(id(dot))
         # Create Digraph object
         if self.dot is None:
-            # TODO: Error msg
+            with Console() as c:
+                c.print(f"[Module] Output [Method] add_nodes_edges: Digraph object has not been init!")
             return
 
         if tree.right:
